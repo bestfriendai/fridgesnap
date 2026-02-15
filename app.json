@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "FridgeSnap",
+    "slug": "fridgesnap",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#22C55E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fridgesnap.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FridgeSnap needs camera access to take photos of your fridge ingredients.",
+        "NSPhotoLibraryUsageDescription": "FridgeSnap needs photo library access to select ingredient photos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#22C55E"
+      },
+      "package": "com.fridgesnap.app",
+      "permissions": ["android.permission.CAMERA", "android.permission.READ_EXTERNAL_STORAGE"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FridgeSnap to access your camera to photograph ingredients."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FridgeSnap to access your photos to select ingredient images."
+        }
+      ]
+    ]
+  }
+}
