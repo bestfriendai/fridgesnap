@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontSize, spacing } from '../../src/theme';
+import { fontSize, spacing } from '../../src/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: { [key: string]: string } = {
@@ -20,16 +21,35 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 export default function TabLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.gray400,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          paddingTop: spacing.xs,
+          height: 85,
+        },
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: true,
-        headerStyle: styles.header,
-        headerTitleStyle: styles.headerTitle,
+        headerStyle: {
+          backgroundColor: colors.background,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        },
+        headerTitleStyle: {
+          fontSize: fontSize.title,
+          fontWeight: '700',
+          color: colors.text,
+          paddingLeft: spacing.lg,
+        },
         headerTitleAlign: 'left',
       }}
     >
@@ -67,13 +87,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.xs,
-    height: 85,
-  },
   tabBarLabel: {
     fontSize: fontSize.caption,
     fontWeight: '500',
@@ -90,18 +103,5 @@ const styles = StyleSheet.create({
   },
   tabIconFocused: {
     opacity: 1,
-  },
-  header: {
-    backgroundColor: colors.background,
-    elevation: 0,
-    shadowOpacity: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: {
-    fontSize: fontSize.title,
-    fontWeight: '700',
-    color: colors.black,
-    paddingLeft: spacing.lg,
   },
 });

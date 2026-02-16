@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
+import { spacing, fontSize, borderRadius, shadows } from '../../src/theme';
+import { useThemeColors, useTheme, ThemeMode } from '../../src/contexts/ThemeContext';
 import { useFridgeStore } from '../../src/store/fridgeStore';
 import { restorePurchases } from '../../src/services/purchases';
 
@@ -16,7 +17,15 @@ const DIETARY_OPTIONS = [
   'Nut-Free',
 ];
 
+const THEME_OPTIONS: { label: string; value: ThemeMode; icon: string }[] = [
+  { label: 'Light', value: 'light', icon: '☀️' },
+  { label: 'Dark', value: 'dark', icon: '🌙' },
+  { label: 'System', value: 'system', icon: '📱' },
+];
+
 export default function SettingsScreen() {
+  const colors = useThemeColors();
+  const { themeMode, setThemeMode } = useTheme();
   const { 
     dietaryRestrictions, 
     setDietaryRestrictions,
@@ -58,15 +67,46 @@ export default function SettingsScreen() {
   };
   
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+      </View>
+
+      {/* Appearance */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>Appearance</Text>
+        
+        <View style={[styles.themeCard, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.themeLabel, { color: colors.text }]}>Theme</Text>
+          <View style={styles.themeOptions}>
+            {THEME_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.themeOption,
+                  { backgroundColor: colors.gray100 },
+                  themeMode === option.value && { backgroundColor: colors.primary },
+                ]}
+                onPress={() => setThemeMode(option.value)}
+              >
+                <Text style={styles.themeOptionIcon}>{option.icon}</Text>
+                <Text style={[
+                  styles.themeOptionText,
+                  { color: colors.text },
+                  themeMode === option.value && { color: '#FFFFFF', fontWeight: '600' },
+                ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </View>
       
       {/* Dietary Preferences */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dietary Preferences</Text>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>Dietary Preferences</Text>
         
         <View style={styles.dietaryGrid}>
           {DIETARY_OPTIONS.map((diet) => (
@@ -74,12 +114,14 @@ export default function SettingsScreen() {
               key={diet}
               style={[
                 styles.dietaryChip,
-                dietaryRestrictions.includes(diet) && styles.dietaryChipActive,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                dietaryRestrictions.includes(diet) && { backgroundColor: colors.primary, borderColor: colors.primary },
               ]}
               onPress={() => toggleDietary(diet)}
             >
               <Text style={[
                 styles.dietaryText,
+                { color: colors.gray700 },
                 dietaryRestrictions.includes(diet) && styles.dietaryTextActive,
               ]}>
                 {diet}
@@ -94,13 +136,13 @@ export default function SettingsScreen() {
       
       {/* Excluded Ingredients */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Excluded Ingredients</Text>
-        <Text style={styles.sectionSubtitle}>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>Excluded Ingredients</Text>
+        <Text style={[styles.sectionSubtitle, { color: colors.gray500 }]}>
           Ingredients you want to avoid in recipes
         </Text>
         
         <View style={styles.excludedInput}>
-          <View style={styles.inputWrapper}>
+          <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TouchableOpacity 
               style={styles.input}
               onPress={() => {
@@ -113,7 +155,7 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <Text style={styles.inputText}>Tap to add ingredient</Text>
+              <Text style={[styles.inputText, { color: colors.gray400 }]}>Tap to add ingredient</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -123,11 +165,11 @@ export default function SettingsScreen() {
             {excludedIngredients.map((ing) => (
               <TouchableOpacity
                 key={ing}
-                style={styles.excludedChip}
+                style={[styles.excludedChip, { backgroundColor: colors.error + '15' }]}
                 onPress={() => removeExcludedIngredient(ing)}
               >
-                <Text style={styles.excludedText}>{ing}</Text>
-                <Text style={styles.excludedRemove}>✕</Text>
+                <Text style={[styles.excludedText, { color: colors.error }]}>{ing}</Text>
+                <Text style={[styles.excludedRemove, { color: colors.error }]}>✕</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -136,37 +178,37 @@ export default function SettingsScreen() {
       
       {/* Premium Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Premium</Text>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>Premium</Text>
         
         {isPremium ? (
-          <View style={[styles.premiumCard, { borderWidth: 2, borderColor: colors.primary }]}>
+          <View style={[styles.premiumCard, { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.primary }, shadows.sm]}>
             <View style={[styles.premiumIcon, { backgroundColor: colors.primary }]}>
               <Text style={styles.premiumEmoji}>⚡</Text>
             </View>
             <View style={styles.premiumContent}>
-              <Text style={styles.premiumTitle}>Fridgio Pro Active</Text>
-              <Text style={styles.premiumDescription}>
+              <Text style={[styles.premiumTitle, { color: colors.text }]}>Fridgio Pro Active</Text>
+              <Text style={[styles.premiumDescription, { color: colors.gray500 }]}>
                 You have unlimited access to all features
               </Text>
             </View>
           </View>
         ) : (
           <TouchableOpacity 
-            style={styles.premiumCard}
+            style={[styles.premiumCard, { backgroundColor: colors.card }, shadows.sm]}
             onPress={() => router.push('/paywall')}
           >
-            <View style={styles.premiumIcon}>
+            <View style={[styles.premiumIcon, { backgroundColor: colors.gray900 }]}>
               <Text style={styles.premiumEmoji}>⚡</Text>
             </View>
             <View style={styles.premiumContent}>
-              <Text style={styles.premiumTitle}>Unlock Premium</Text>
-              <Text style={styles.premiumDescription}>
+              <Text style={[styles.premiumTitle, { color: colors.text }]}>Unlock Premium</Text>
+              <Text style={[styles.premiumDescription, { color: colors.gray500 }]}>
                 {3 - scanCount > 0 
                   ? `${3 - scanCount} free scans left. Upgrade for unlimited.` 
                   : 'Upgrade for unlimited scans & AI recipes'}
               </Text>
             </View>
-            <Text style={styles.premiumArrow}>›</Text>
+            <Text style={[styles.premiumArrow, { color: colors.gray300 }]}>›</Text>
           </TouchableOpacity>
         )}
         
@@ -182,47 +224,47 @@ export default function SettingsScreen() {
               }
             }}
           >
-            <Text style={styles.restoreText}>Restore Purchases</Text>
+            <Text style={[styles.restoreText, { color: colors.gray500 }]}>Restore Purchases</Text>
           </TouchableOpacity>
         )}
       </View>
       
       {/* About Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>About</Text>
         
-        <View style={styles.aboutCard}>
-          <Text style={styles.appName}>Fridgio</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
+        <View style={[styles.aboutCard, { backgroundColor: colors.card }, shadows.sm]}>
+          <Text style={[styles.appName, { color: colors.text }]}>Fridgio</Text>
+          <Text style={[styles.appVersion, { color: colors.gray500 }]}>Version 1.0.0</Text>
           
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           
           <TouchableOpacity style={styles.aboutRow} onPress={() => Linking.openURL('https://fridgio.app/privacy')}>
-            <Text style={styles.aboutText}>Privacy Policy</Text>
-            <Text style={styles.aboutArrow}>›</Text>
+            <Text style={[styles.aboutText, { color: colors.text }]}>Privacy Policy</Text>
+            <Text style={[styles.aboutArrow, { color: colors.gray300 }]}>›</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.aboutRow} onPress={() => Linking.openURL('https://fridgio.app/terms')}>
-            <Text style={styles.aboutText}>Terms of Service</Text>
-            <Text style={styles.aboutArrow}>›</Text>
+            <Text style={[styles.aboutText, { color: colors.text }]}>Terms of Service</Text>
+            <Text style={[styles.aboutArrow, { color: colors.gray300 }]}>›</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.aboutRow}>
-            <Text style={styles.aboutText}>Send Feedback</Text>
-            <Text style={styles.aboutArrow}>›</Text>
+            <Text style={[styles.aboutText, { color: colors.text }]}>Send Feedback</Text>
+            <Text style={[styles.aboutArrow, { color: colors.gray300 }]}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
       
       {/* Danger Zone */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data</Text>
+        <Text style={[styles.sectionTitle, { color: colors.gray500 }]}>Data</Text>
         
         <TouchableOpacity 
-          style={styles.dangerButton}
+          style={[styles.dangerButton, { backgroundColor: colors.error + '15' }]}
           onPress={handleClearData}
         >
-          <Text style={styles.dangerText}>Clear All Data</Text>
+          <Text style={[styles.dangerText, { color: colors.error }]}>Clear All Data</Text>
         </TouchableOpacity>
       </View>
       
@@ -230,10 +272,10 @@ export default function SettingsScreen() {
       {!hasCompletedOnboarding && (
         <View style={styles.section}>
           <TouchableOpacity 
-            style={styles.resetButton}
+            style={[styles.resetButton, { backgroundColor: colors.gray100 }]}
             onPress={completeOnboarding}
           >
-            <Text style={styles.resetText}>Reset Onboarding (Debug)</Text>
+            <Text style={[styles.resetText, { color: colors.gray500 }]}>Reset Onboarding (Debug)</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -246,7 +288,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
   },
   header: {
     padding: spacing.lg,
@@ -255,7 +296,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.titleLarge,
     fontWeight: '700',
-    color: colors.black,
   },
   section: {
     marginBottom: spacing.lg,
@@ -263,7 +303,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.caption,
     fontWeight: '600',
-    color: colors.gray500,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginLeft: spacing.lg,
@@ -271,10 +310,40 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     marginLeft: spacing.lg,
     marginBottom: spacing.md,
     marginTop: -spacing.sm,
+  },
+  themeCard: {
+    marginHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
+  themeLabel: {
+    fontSize: fontSize.body,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  themeOptionIcon: {
+    fontSize: 16,
+  },
+  themeOptionText: {
+    fontSize: fontSize.caption,
+    fontWeight: '500',
   },
   dietaryGrid: {
     flexDirection: 'row',
@@ -285,29 +354,22 @@ const styles = StyleSheet.create({
   dietaryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-  },
-  dietaryChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
   },
   dietaryText: {
     fontSize: fontSize.caption,
-    color: colors.gray700,
     marginRight: spacing.xs,
   },
   dietaryTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   checkmark: {
     fontSize: 12,
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   excludedInput: {
@@ -315,10 +377,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   inputWrapper: {
-    backgroundColor: colors.white,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   input: {
     padding: spacing.md,
@@ -326,7 +386,6 @@ const styles = StyleSheet.create({
   },
   inputText: {
     fontSize: fontSize.body,
-    color: colors.gray400,
   },
   excludedList: {
     flexDirection: 'row',
@@ -337,34 +396,28 @@ const styles = StyleSheet.create({
   excludedChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.error + '15',
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   excludedText: {
     fontSize: fontSize.caption,
-    color: colors.error,
     marginRight: spacing.sm,
   },
   excludedRemove: {
     fontSize: 10,
-    color: colors.error,
   },
   premiumCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    ...shadows.sm,
   },
   premiumIcon: {
     width: 44,
     height: 44,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.gray900,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -378,16 +431,13 @@ const styles = StyleSheet.create({
   premiumTitle: {
     fontSize: fontSize.body,
     fontWeight: '600',
-    color: colors.black,
   },
   premiumDescription: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     marginTop: 2,
   },
   premiumArrow: {
     fontSize: 24,
-    color: colors.gray300,
   },
   restoreRow: {
     marginHorizontal: spacing.lg,
@@ -397,31 +447,25 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     fontWeight: '500',
   },
   aboutCard: {
-    backgroundColor: colors.white,
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    ...shadows.sm,
   },
   appName: {
     fontSize: fontSize.bodyLarge,
     fontWeight: '600',
-    color: colors.black,
     textAlign: 'center',
   },
   appVersion: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     textAlign: 'center',
     marginTop: spacing.xs,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
     marginVertical: spacing.lg,
   },
   aboutRow: {
@@ -432,14 +476,11 @@ const styles = StyleSheet.create({
   },
   aboutText: {
     fontSize: fontSize.body,
-    color: colors.black,
   },
   aboutArrow: {
     fontSize: 20,
-    color: colors.gray300,
   },
   dangerButton: {
-    backgroundColor: colors.error + '15',
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
@@ -448,10 +489,8 @@ const styles = StyleSheet.create({
   dangerText: {
     fontSize: fontSize.body,
     fontWeight: '600',
-    color: colors.error,
   },
   resetButton: {
-    backgroundColor: colors.gray100,
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     padding: spacing.md,
@@ -459,6 +498,5 @@ const styles = StyleSheet.create({
   },
   resetText: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
   },
 });

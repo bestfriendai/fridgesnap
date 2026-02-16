@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
+import { spacing, fontSize, borderRadius, shadows } from '../../src/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
 import { useFridgeStore } from '../../src/store/fridgeStore';
 
 export default function SavedScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const { savedRecipes, removeSavedRecipe } = useFridgeStore();
   
   const handleRecipePress = (id: string) => {
@@ -12,11 +14,11 @@ export default function SavedScreen() {
   };
   
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Saved Recipes</Text>
-        <Text style={styles.subtitle}>Your favorite recipes saved for later</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Saved Recipes</Text>
+        <Text style={[styles.subtitle, { color: colors.gray500 }]}>Your favorite recipes saved for later</Text>
       </View>
       
       {/* Saved Recipes List */}
@@ -25,16 +27,16 @@ export default function SavedScreen() {
           {savedRecipes.map((recipe) => (
             <TouchableOpacity
               key={recipe.id}
-              style={styles.recipeCard}
+              style={[styles.recipeCard, { backgroundColor: colors.card }, shadows.sm]}
               onPress={() => handleRecipePress(recipe.id)}
             >
               <View style={styles.recipeContent}>
-                <Text style={styles.recipeTitle}>{recipe.title}</Text>
-                <Text style={styles.recipeDesc} numberOfLines={2}>{recipe.description}</Text>
+                <Text style={[styles.recipeTitle, { color: colors.text }]}>{recipe.title}</Text>
+                <Text style={[styles.recipeDesc, { color: colors.gray500 }]} numberOfLines={2}>{recipe.description}</Text>
                 <View style={styles.recipeMeta}>
-                  <Text style={styles.recipeTime}>⏱️ {recipe.prepTime + recipe.cookTime} min</Text>
-                  <Text style={styles.recipeDifficulty}>• {recipe.difficulty}</Text>
-                  <Text style={styles.recipeServings}>• {recipe.servings} servings</Text>
+                  <Text style={[styles.recipeTime, { color: colors.primary }]}>⏱️ {recipe.prepTime + recipe.cookTime} min</Text>
+                  <Text style={[styles.recipeDifficulty, { color: colors.gray500 }]}>• {recipe.difficulty}</Text>
+                  <Text style={[styles.recipeServings, { color: colors.gray500 }]}>• {recipe.servings} servings</Text>
                 </View>
               </View>
               <TouchableOpacity 
@@ -47,14 +49,14 @@ export default function SavedScreen() {
           ))}
         </View>
       ) : (
-        <View style={styles.emptyState}>
+        <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
           <Text style={styles.emptyEmoji}>❤️</Text>
-          <Text style={styles.emptyTitle}>No saved recipes yet</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No saved recipes yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.gray500 }]}>
             Save recipes you love by tapping the heart icon
           </Text>
           <TouchableOpacity 
-            style={styles.browseButton}
+            style={[styles.browseButton, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/recipes')}
           >
             <Text style={styles.browseButtonText}>Browse Recipes</Text>
@@ -70,7 +72,6 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
   },
   header: {
     padding: spacing.lg,
@@ -79,11 +80,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.titleLarge,
     fontWeight: '700',
-    color: colors.black,
   },
   subtitle: {
     fontSize: fontSize.body,
-    color: colors.gray500,
     marginTop: spacing.xs,
   },
   section: {
@@ -93,11 +92,9 @@ const styles = StyleSheet.create({
   recipeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.sm,
-    ...shadows.sm,
   },
   recipeContent: {
     flex: 1,
@@ -105,12 +102,10 @@ const styles = StyleSheet.create({
   recipeTitle: {
     fontSize: fontSize.bodyLarge,
     fontWeight: '600',
-    color: colors.black,
     marginBottom: spacing.xs,
   },
   recipeDesc: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     marginBottom: spacing.sm,
   },
   recipeMeta: {
@@ -119,17 +114,14 @@ const styles = StyleSheet.create({
   },
   recipeTime: {
     fontSize: fontSize.caption,
-    color: colors.primary,
     fontWeight: '500',
   },
   recipeDifficulty: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     marginLeft: spacing.sm,
   },
   recipeServings: {
     fontSize: fontSize.caption,
-    color: colors.gray500,
     marginLeft: spacing.sm,
   },
   unsaveButton: {
@@ -139,7 +131,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   emptyState: {
-    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     marginHorizontal: spacing.lg,
@@ -152,17 +143,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: fontSize.bodyLarge,
     fontWeight: '600',
-    color: colors.black,
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
     fontSize: fontSize.body,
-    color: colors.gray500,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   browseButton: {
-    backgroundColor: colors.primary,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
@@ -170,6 +158,6 @@ const styles = StyleSheet.create({
   browseButtonText: {
     fontSize: fontSize.body,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 });
