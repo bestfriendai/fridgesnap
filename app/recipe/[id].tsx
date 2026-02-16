@@ -1,104 +1,16 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
-import { useFridgeStore, Recipe } from '../../src/store/fridgeStore';
-
-const RECIPE_DATA: Record<string, Recipe> = {
-  '1': {
-    id: '1',
-    title: 'Quick Stir Fry',
-    description: 'A quick and easy stir fry using whatever vegetables you have',
-    ingredients: ['vegetables', 'protein', 'soy sauce', 'oil'],
-    instructions: [
-      'Chop all vegetables into bite-sized pieces',
-      'Heat oil in a wok or large pan over high heat',
-      'Add protein and cook until browned',
-      'Add vegetables and stir fry for 3-5 minutes',
-      'Add soy sauce and toss to combine',
-      'Serve over rice',
-    ],
-    prepTime: 10,
-    cookTime: 15,
-    servings: 2,
-    difficulty: 'Easy',
-  },
-  '2': {
-    id: '2',
-    title: 'Simple Pasta',
-    description: 'Classic pasta with your choice of sauce',
-    ingredients: ['pasta', 'tomato sauce', 'cheese', 'garlic'],
-    instructions: [
-      'Cook pasta according to package directions',
-      'In a pan, sauté garlic in olive oil',
-      'Add tomato sauce and simmer',
-      'Drain pasta and add to sauce',
-      'Top with cheese and serve',
-    ],
-    prepTime: 5,
-    cookTime: 20,
-    servings: 4,
-    difficulty: 'Easy',
-  },
-  '3': {
-    id: '3',
-    title: 'Breakfast Scramble',
-    description: 'Fluffy eggs with vegetables and cheese',
-    ingredients: ['eggs', 'cheese', 'vegetables', 'butter'],
-    instructions: [
-      'Beat eggs in a bowl',
-      'Melt butter in a non-stick pan',
-      'Add vegetables and cook until soft',
-      'Pour in eggs and scramble',
-      'Add cheese and fold until melted',
-      'Season with salt and pepper',
-    ],
-    prepTime: 5,
-    cookTime: 10,
-    servings: 2,
-    difficulty: 'Easy',
-  },
-  '4': {
-    id: '4',
-    title: 'Chicken Salad',
-    description: 'Fresh and healthy chicken salad',
-    ingredients: ['chicken', 'lettuce', 'tomato', 'cucumber', 'dressing'],
-    instructions: [
-      'Cook and slice chicken breast',
-      'Wash and chop all vegetables',
-      'Combine in a large bowl',
-      'Add dressing and toss',
-      'Serve immediately',
-    ],
-    prepTime: 15,
-    cookTime: 0,
-    servings: 2,
-    difficulty: 'Easy',
-  },
-  '5': {
-    id: '5',
-    title: 'Rice Bowl',
-    description: 'Customizable rice bowl with toppings',
-    ingredients: ['rice', 'protein', 'vegetables', 'sauce'],
-    instructions: [
-      'Cook rice according to package',
-      'Prepare protein (chicken, beef, or tofu)',
-      'Slice vegetables thinly',
-      'Assemble bowl with rice base',
-      'Add toppings and drizzle with sauce',
-    ],
-    prepTime: 10,
-    cookTime: 20,
-    servings: 2,
-    difficulty: 'Easy',
-  },
-};
+import { useFridgeStore } from '../../src/store/fridgeStore';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { savedRecipes, addSavedRecipe, removeSavedRecipe, addRecentRecipe } = useFridgeStore();
-  
-  const recipe = RECIPE_DATA[id || ''] || savedRecipes.find(r => r.id === id);
+  const { savedRecipes, recentRecipes, addSavedRecipe, removeSavedRecipe } = useFridgeStore();
+
+  const recipe =
+    recentRecipes.find((r) => r.id === id) ??
+    savedRecipes.find((r) => r.id === id);
   
   if (!recipe) {
     return (

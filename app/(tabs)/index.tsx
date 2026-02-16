@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
-import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
-import { useFridgeStore, INGREDIENT_CATEGORIES, generateRecipeSuggestions } from '../../src/store/fridgeStore';
+import { useFridgeStore, INGREDIENT_CATEGORIES, generateRecipeSuggestions, Recipe } from '../../src/store/fridgeStore';
+import { detectIngredientsFromImage, imageToBase64, DetectedIngredient } from '../../src/services/vision';
 
 const QUICK_ADD_INGREDIENTS = [
   'Chicken', 'Eggs', 'Milk', 'Cheese', 'Butter', 'Rice', 'Pasta', 'Tomatoes',
@@ -17,6 +18,8 @@ export default function HomeScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newIngredient, setNewIngredient] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('produce');
+  const [suggestedRecipes, setSuggestedRecipes] = useState<Recipe[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const handleAddIngredient = () => {
     if (!newIngredient.trim()) return;
@@ -41,16 +44,11 @@ export default function HomeScreen() {
       quality: 0.8,
     });
     
-    if (!result.canceled) {
-      // In production, this would use AI to identify ingredients
-      Alert.alert(
-        'Photo Captured!',
-        'AI ingredient detection would analyze this photo. For now, add your ingredients manually.',
-        [{ text: 'OK' }]
-      );
+    if (!result.canceled && result.assets[0]) {
+      await analyzeImage(result.assets[0].uri);
     }
   };
-  
+
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -63,18 +61,124 @@ export default function HomeScreen() {
       quality: 0.8,
     });
     
-    if (!result.canceled) {
+    if (!result.canceled && result.assets[0]) {
+      await analyzeImage(result.assets[0].uri);
+    }
+  };
+
+  const analyzeImage = async (uri: string) => {
+    const hasApiKey = !!process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    
+    if (!hasApiKey) {
       Alert.alert(
-        'Photo Selected!',
-        'AI ingredient detection would analyze this photo. For now, add your ingredients manually.',
+        'API Key Required',
+        'To enable AI ingredient detection, please add your OpenAI API key to the environment variables.\n\nSee API_KEYS.md for instructions.',
         [{ text: 'OK' }]
       );
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    try {
+      const base64 = await imageToBase64(uri);
+      const detectedIngredients = await detectIngredientsFromImage(base64);
+      
+      if (detectedIngredients.length === 0) {
+        Alert.alert(
+          'No Ingredients Found',
+          'Could not detect any ingredients in this image. Try a clearer photo of your fridge contents.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const ingredientMap: Record<string, string> = {
+        produce: 'produce',
+        vegetable: 'produce',
+        fruit: 'produce',
+        herb: 'produce',
+        dairy: 'dairy',
+        milk: 'dairy',
+        cheese: 'dairy',
+        butter: 'dairy',
+        egg: 'dairy',
+        yogurt: 'dairy',
+        meat: 'meat',
+        chicken: 'meat',
+        beef: 'meat',
+        pork: 'meat',
+        fish: 'meat',
+        seafood: 'meat',
+        bacon: 'meat',
+        ground: 'meat',
+        pantry: 'pantry',
+        rice: 'pantry',
+        pasta: 'pantry',
+        flour: 'pantry',
+        sugar: 'pantry',
+        oil: 'pantry',
+        spice: 'pantry',
+        sauce: 'pantry',
+        canned: 'pantry',
+        frozen: 'frozen',
+        drinks: 'drinks',
+        beverage: 'drinks',
+        water: 'drinks',
+        juice: 'drinks',
+      };
+
+      let addedCount = 0;
+      
+      for (const detected of detectedIngredients) {
+        const lowerName = detected.name.toLowerCase();
+        let category = 'pantry';
+        
+        for (const [key, value] of Object.entries(ingredientMap)) {
+          if (lowerName.includes(key)) {
+            category = value;
+            break;
+          }
+        }
+        
+        addIngredient(detected.name, category);
+        addedCount++;
+      }
+
+      Alert.alert(
+        'Ingredients Detected!',
+        `Found and added ${addedCount} ingredient${addedCount !== 1 ? 's' : ''} from your photo.`,
+        [{ text: 'Great!' }]
+      );
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      Alert.alert(
+        'Analysis Failed',
+        'Could not analyze this image. Please try again or add ingredients manually.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsAnalyzing(false);
     }
   };
   
-  // Generate recipe suggestions based on current ingredients
-  const suggestedRecipes = generateRecipeSuggestions(ingredients);
-  
+  useEffect(() => {
+    let active = true;
+
+    const loadSuggestions = async () => {
+      const recipes = await generateRecipeSuggestions(ingredients);
+      if (active) {
+        setSuggestedRecipes(recipes);
+      }
+    };
+
+    loadSuggestions();
+
+    return () => {
+      active = false;
+    };
+  }, [ingredients]);
+
   // Group ingredients by category
   const groupedIngredients = ingredients.reduce((acc, ing) => {
     if (!acc[ing.category]) acc[ing.category] = [];
@@ -101,13 +205,33 @@ export default function HomeScreen() {
           
           {/* Quick Actions */}
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.quickAction} onPress={handleTakePhoto}>
-              <Text style={styles.quickActionIcon}>📷</Text>
-              <Text style={styles.quickActionText}>Snap Photo</Text>
+            <TouchableOpacity 
+              style={[styles.quickAction, isAnalyzing && styles.quickActionDisabled]} 
+              onPress={handleTakePhoto}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <ActivityIndicator color={colors.white} size="small" />
+              ) : (
+                <Text style={styles.quickActionIcon}>📷</Text>
+              )}
+              <Text style={styles.quickActionText}>
+                {isAnalyzing ? 'Analyzing...' : 'Snap Photo'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction} onPress={handlePickImage}>
-              <Text style={styles.quickActionIcon}>🖼️</Text>
-              <Text style={styles.quickActionText}>Pick Photo</Text>
+            <TouchableOpacity 
+              style={[styles.quickAction, isAnalyzing && styles.quickActionDisabled]} 
+              onPress={handlePickImage}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <ActivityIndicator color={colors.white} size="small" />
+              ) : (
+                <Text style={styles.quickActionIcon}>🖼️</Text>
+              )}
+              <Text style={styles.quickActionText}>
+                {isAnalyzing ? 'Analyzing...' : 'Pick Photo'}
+              </Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -289,6 +413,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: borderRadius.md,
     padding: spacing.md,
+  },
+  quickActionDisabled: {
+    opacity: 0.7,
   },
   quickActionIcon: {
     fontSize: 20,

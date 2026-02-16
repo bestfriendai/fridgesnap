@@ -26,7 +26,10 @@
         "backgroundColor": "#22C55E"
       },
       "package": "com.fridgesnap.app",
-      "permissions": ["android.permission.CAMERA", "android.permission.READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,7 +46,8 @@
         {
           "photosPermission": "Allow FridgeSnap to access your photos to select ingredient images."
         }
-      ]
+      ],
+      "expo-router"
     ]
   }
 }
