@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
 import { useFridgeStore } from '../../src/store/fridgeStore';
+import { restorePurchases } from '../../src/services/purchases';
 
 const DIETARY_OPTIONS = [
   'Vegetarian',
@@ -25,6 +26,8 @@ export default function SettingsScreen() {
     hasCompletedOnboarding,
     completeOnboarding,
     clearIngredients,
+    isPremium,
+    scanCount,
   } = useFridgeStore();
   
   const [newExcluded, setNewExcluded] = useState('');
@@ -135,21 +138,53 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Premium</Text>
         
-        <TouchableOpacity 
-          style={styles.premiumCard}
-          onPress={() => router.push('/paywall')}
-        >
-          <View style={styles.premiumIcon}>
-            <Text style={styles.premiumEmoji}>⚡</Text>
+        {isPremium ? (
+          <View style={[styles.premiumCard, { borderWidth: 2, borderColor: colors.primary }]}>
+            <View style={[styles.premiumIcon, { backgroundColor: colors.primary }]}>
+              <Text style={styles.premiumEmoji}>⚡</Text>
+            </View>
+            <View style={styles.premiumContent}>
+              <Text style={styles.premiumTitle}>Fridgio Pro Active</Text>
+              <Text style={styles.premiumDescription}>
+                You have unlimited access to all features
+              </Text>
+            </View>
           </View>
-          <View style={styles.premiumContent}>
-            <Text style={styles.premiumTitle}>Unlock Premium</Text>
-            <Text style={styles.premiumDescription}>
-              AI-powered recipes, meal planning, grocery lists & more
-            </Text>
-          </View>
-          <Text style={styles.premiumArrow}>›</Text>
-        </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.premiumCard}
+            onPress={() => router.push('/paywall')}
+          >
+            <View style={styles.premiumIcon}>
+              <Text style={styles.premiumEmoji}>⚡</Text>
+            </View>
+            <View style={styles.premiumContent}>
+              <Text style={styles.premiumTitle}>Unlock Premium</Text>
+              <Text style={styles.premiumDescription}>
+                {3 - scanCount > 0 
+                  ? `${3 - scanCount} free scans left. Upgrade for unlimited.` 
+                  : 'Upgrade for unlimited scans & AI recipes'}
+              </Text>
+            </View>
+            <Text style={styles.premiumArrow}>›</Text>
+          </TouchableOpacity>
+        )}
+        
+        {!isPremium && (
+          <TouchableOpacity 
+            style={styles.restoreRow}
+            onPress={async () => {
+              const restored = await restorePurchases();
+              if (restored) {
+                Alert.alert('Restored!', 'Your premium access has been restored.');
+              } else {
+                Alert.alert('No Purchases Found', 'No previous purchases were found for this account.');
+              }
+            }}
+          >
+            <Text style={styles.restoreText}>Restore Purchases</Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       {/* About Section */}
@@ -157,17 +192,17 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>About</Text>
         
         <View style={styles.aboutCard}>
-          <Text style={styles.appName}>FridgeSnap</Text>
+          <Text style={styles.appName}>Fridgio</Text>
           <Text style={styles.appVersion}>Version 1.0.0</Text>
           
           <View style={styles.divider} />
           
-          <TouchableOpacity style={styles.aboutRow}>
+          <TouchableOpacity style={styles.aboutRow} onPress={() => Linking.openURL('https://fridgio.app/privacy')}>
             <Text style={styles.aboutText}>Privacy Policy</Text>
             <Text style={styles.aboutArrow}>›</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.aboutRow}>
+          <TouchableOpacity style={styles.aboutRow} onPress={() => Linking.openURL('https://fridgio.app/terms')}>
             <Text style={styles.aboutText}>Terms of Service</Text>
             <Text style={styles.aboutArrow}>›</Text>
           </TouchableOpacity>
@@ -353,6 +388,17 @@ const styles = StyleSheet.create({
   premiumArrow: {
     fontSize: 24,
     color: colors.gray300,
+  },
+  restoreRow: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  restoreText: {
+    fontSize: fontSize.caption,
+    color: colors.gray500,
+    fontWeight: '500',
   },
   aboutCard: {
     backgroundColor: colors.white,

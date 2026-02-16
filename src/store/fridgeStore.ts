@@ -6,6 +6,10 @@ import { fetchRecipesByIngredients as fetchFromMealDb, searchRecipes as searchMe
 
 const useSpoonacular = !!process.env.EXPO_PUBLIC_SPOONACULAR_API_KEY;
 
+const FREE_SCAN_LIMIT = 3;
+
+const getToday = (): string => new Date().toISOString().split('T')[0];
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -41,6 +45,11 @@ interface FridgeState {
   // Onboarding
   hasCompletedOnboarding: boolean;
   
+  // Premium
+  isPremium: boolean;
+  scanCount: number;
+  scanDate: string;
+  
   // Actions
   addIngredient: (name: string, category: string) => void;
   removeIngredient: (id: string) => void;
@@ -52,6 +61,10 @@ interface FridgeState {
   addExcludedIngredient: (ingredient: string) => void;
   removeExcludedIngredient: (ingredient: string) => void;
   completeOnboarding: () => void;
+  setPremium: (value: boolean) => void;
+  incrementScanCount: () => void;
+  canScan: () => boolean;
+  remainingFreeScans: () => number;
 }
 
 export const useFridgeStore = create<FridgeState>()(
@@ -63,6 +76,9 @@ export const useFridgeStore = create<FridgeState>()(
       dietaryRestrictions: [],
       excludedIngredients: [],
       hasCompletedOnboarding: false,
+      isPremium: false,
+      scanCount: 0,
+      scanDate: getToday(),
       
       addIngredient: (name, category) => {
         const ingredient: Ingredient = {
@@ -119,6 +135,32 @@ export const useFridgeStore = create<FridgeState>()(
       },
       
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+      
+      setPremium: (value) => set({ isPremium: value }),
+      
+      incrementScanCount: () => {
+        const today = getToday();
+        const { scanDate, scanCount } = get();
+        if (scanDate !== today) {
+          set({ scanCount: 1, scanDate: today });
+        } else {
+          set({ scanCount: scanCount + 1 });
+        }
+      },
+      
+      canScan: () => {
+        const { isPremium, scanCount, scanDate } = get();
+        if (isPremium) return true;
+        if (scanDate !== getToday()) return true;
+        return scanCount < FREE_SCAN_LIMIT;
+      },
+      
+      remainingFreeScans: () => {
+        const { isPremium, scanCount, scanDate } = get();
+        if (isPremium) return Infinity;
+        if (scanDate !== getToday()) return FREE_SCAN_LIMIT;
+        return Math.max(0, FREE_SCAN_LIMIT - scanCount);
+      },
     }),
     {
       name: 'fridgesnap-storage',
@@ -136,6 +178,8 @@ export const INGREDIENT_CATEGORIES = {
   frozen: ['Frozen Vegetables', 'Ice Cream', 'Frozen Meat'],
   drinks: ['Water', 'Juice', 'Soda', 'Milk Alternatives'],
 };
+
+export const FREE_SCAN_LIMIT_VALUE = FREE_SCAN_LIMIT;
 
 export const generateRecipeSuggestions = async (ingredients: Ingredient[]): Promise<Recipe[]> => {
   try {

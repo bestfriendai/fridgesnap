@@ -1,4 +1,4 @@
-// FridgeSnap - Design System
+// Fridgio - Design System
 // Brand: Fresh Green (#22C55E)
 
 export const colors = {

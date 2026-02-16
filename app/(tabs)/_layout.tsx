@@ -38,7 +38,7 @@ export default function TabLayout() {
         options={{
           title: 'My Fridge',
           tabBarIcon: ({ focused }) => <TabIcon name="index" focused={focused} />,
-          headerTitle: 'FridgeSnap',
+          headerTitle: 'Fridgio',
         }}
       />
       <Tabs.Screen

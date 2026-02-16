@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/theme';
-import { useFridgeStore, INGREDIENT_CATEGORIES, generateRecipeSuggestions, Recipe } from '../../src/store/fridgeStore';
+import { useFridgeStore, INGREDIENT_CATEGORIES, generateRecipeSuggestions, Recipe, FREE_SCAN_LIMIT_VALUE } from '../../src/store/fridgeStore';
 import { detectIngredientsFromImage, imageToBase64, DetectedIngredient } from '../../src/services/vision';
 
 const QUICK_ADD_INGREDIENTS = [
@@ -14,7 +14,7 @@ const QUICK_ADD_INGREDIENTS = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { ingredients, addIngredient, removeIngredient, clearIngredients, addRecentRecipe } = useFridgeStore();
+  const { ingredients, addIngredient, removeIngredient, clearIngredients, addRecentRecipe, isPremium, scanCount, incrementScanCount, canScan } = useFridgeStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newIngredient, setNewIngredient] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('produce');
@@ -32,7 +32,17 @@ export default function HomeScreen() {
     addIngredient(name, selectedCategory);
   };
   
+  const checkScanLimit = (): boolean => {
+    if (!canScan()) {
+      router.push('/paywall');
+      return false;
+    }
+    return true;
+  };
+
   const handleTakePhoto = async () => {
+    if (!checkScanLimit()) return;
+    
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Permission needed', 'Camera permission is needed to take photos of your fridge.');
@@ -45,11 +55,14 @@ export default function HomeScreen() {
     });
     
     if (!result.canceled && result.assets[0]) {
+      incrementScanCount();
       await analyzeImage(result.assets[0].uri);
     }
   };
 
   const handlePickImage = async () => {
+    if (!checkScanLimit()) return;
+    
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Permission needed', 'Photo library permission is needed.');
@@ -62,6 +75,7 @@ export default function HomeScreen() {
     });
     
     if (!result.canceled && result.assets[0]) {
+      incrementScanCount();
       await analyzeImage(result.assets[0].uri);
     }
   };
@@ -202,6 +216,19 @@ export default function HomeScreen() {
           <Text style={styles.headerSubtitle}>
             {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''} added
           </Text>
+          
+          {!isPremium && (
+            <View style={styles.scanCounter}>
+              <Text style={styles.scanCounterText}>
+                {Math.max(0, FREE_SCAN_LIMIT_VALUE - scanCount)} free scan{FREE_SCAN_LIMIT_VALUE - scanCount !== 1 ? 's' : ''} remaining
+              </Text>
+            </View>
+          )}
+          {isPremium && (
+            <View style={styles.proBadgeHeader}>
+              <Text style={styles.proBadgeText}>⚡ PRO — Unlimited</Text>
+            </View>
+          )}
           
           {/* Quick Actions */}
           <View style={styles.quickActions}>
@@ -358,19 +385,21 @@ export default function HomeScreen() {
       </View>
       
       {/* Premium Banner */}
-      <TouchableOpacity 
-        style={styles.premiumBanner}
-        onPress={() => router.push('/paywall')}
-      >
-        <View style={styles.premiumContent}>
-          <Text style={styles.premiumEmoji}>⚡</Text>
-          <View style={styles.premiumText}>
-            <Text style={styles.premiumTitle}>Unlock Premium</Text>
-            <Text style={styles.premiumSubtitle}>AI-powered recipes, meal planning & more</Text>
+      {!isPremium && (
+        <TouchableOpacity 
+          style={styles.premiumBanner}
+          onPress={() => router.push('/paywall')}
+        >
+          <View style={styles.premiumContent}>
+            <Text style={styles.premiumEmoji}>⚡</Text>
+            <View style={styles.premiumText}>
+              <Text style={styles.premiumTitle}>Unlock Premium</Text>
+              <Text style={styles.premiumSubtitle}>AI-powered recipes, meal planning & more</Text>
+            </View>
           </View>
-        </View>
-        <Text style={styles.premiumArrow}>›</Text>
-      </TouchableOpacity>
+          <Text style={styles.premiumArrow}>›</Text>
+        </TouchableOpacity>
+      )}
       
       <View style={{ height: spacing.xxxl }} />
     </ScrollView>
@@ -400,6 +429,30 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     color: 'rgba(255,255,255,0.8)',
     marginBottom: spacing.lg,
+  },
+  scanCounter: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  scanCounterText: {
+    fontSize: fontSize.caption,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+  },
+  proBadgeHeader: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  proBadgeText: {
+    fontSize: fontSize.caption,
+    color: colors.white,
+    fontWeight: '700',
   },
   quickActions: {
     flexDirection: 'row',

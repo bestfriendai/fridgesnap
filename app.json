@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FridgeSnap",
+    "name": "Fridgio",
     "slug": "fridgesnap",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,10 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fridgesnap.app",
+      "bundleIdentifier": "com.fridgio.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "FridgeSnap needs camera access to take photos of your fridge ingredients.",
-        "NSPhotoLibraryUsageDescription": "FridgeSnap needs photo library access to select ingredient photos."
+        "NSCameraUsageDescription": "Fridgio needs camera access to take photos of your fridge ingredients.",
+        "NSPhotoLibraryUsageDescription": "Fridgio needs photo library access to select ingredient photos."
       }
     },
     "android": {
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#22C55E"
       },
-      "package": "com.fridgesnap.app",
+      "package": "com.fridgio.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
@@ -38,13 +38,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow FridgeSnap to access your camera to photograph ingredients."
+          "cameraPermission": "Allow Fridgio to access your camera to photograph ingredients."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow FridgeSnap to access your photos to select ingredient images."
+          "photosPermission": "Allow Fridgio to access your photos to select ingredient images."
         }
       ],
       "expo-router"
